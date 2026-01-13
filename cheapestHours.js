@@ -150,4 +150,5 @@ console.log('Grid tariff source:', validGridTariff?.ChargeOwner || 'Fallback');
 console.log('Current hour breakdown:', prices[0]);
 console.log(message);
 
-return message;
+// Return true if NOW is the cheapest window
+return cheapest.startsInHours === 0;

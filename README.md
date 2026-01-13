@@ -108,11 +108,19 @@ When you should wait:
 ⏳ Vent 4t — billigst kl. 14:00 (1.52 DKK). Nu: 2.34 DKK
 ```
 
+### Return Value
+
+The script returns a **boolean**:
+- `true` — if the cheapest window is **now**
+- `false` — if you should wait
+
+This makes it easy to use in Flow conditions directly.
+
 ### Flow Ideas
 
-Use the variables updated by this script to create smart automations:
+Use the return value and variables to create smart automations:
 
-- **Start appliances**: When `HoursToCheapest = 0`, turn on dishwasher/washing machine
+- **Start appliances**: When script returns `true`, turn on dishwasher/washing machine
 - **EV charging**: Start charging when `HoursToCheapest = 0`, stop when window ends
 - **Water heating**: Heat water tank when `CurrentPrice` is below threshold
 - **Price alerts**: Send push notification when `CurrentPrice` exceeds a limit
