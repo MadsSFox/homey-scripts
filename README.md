@@ -42,13 +42,27 @@ The script fetches all tariffs dynamically from Energi Data Service:
 
 #### 1. Create Homey Variables
 
-In the Homey app, go to **Logic** and create these variables:
+In the Homey app, go to **Logic** and create these variables (all are `Number` type):
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `HoursToCheapest` | Number | Hours until cheapest window starts |
-| `CheapestPrice` | Number | Average price in cheapest window (DKK/kWh) |
-| `CurrentPrice` | Number | Current hour's total price (DKK/kWh) |
+**Current hour prices:**
+| Variable | Description |
+|----------|-------------|
+| `CurrentTotalPrice` | Total price incl. VAT (DKK/kWh) |
+| `CurrentSpotPrice` | Spot price only (DKK/kWh) |
+| `CurrentGridTariff` | Grid tariff for current hour (DKK/kWh) |
+
+**Cheapest window averages:**
+| Variable | Description |
+|----------|-------------|
+| `HoursToCheapest` | Hours until cheapest window starts |
+| `CheapestTotalPrice` | Avg total price incl. VAT (DKK/kWh) |
+| `CheapestSpotPrice` | Avg spot price (DKK/kWh) |
+| `CheapestGridTariff` | Avg grid tariff (DKK/kWh) |
+
+**Fixed tariffs:**
+| Variable | Description |
+|----------|-------------|
+| `FixedTariffs` | System + transmission + electricity tax (DKK/kWh) |
 
 #### 2. Create the Script
 
@@ -122,9 +136,11 @@ Use the return value and variables to create smart automations:
 
 - **Start appliances**: When script returns `true`, turn on dishwasher/washing machine
 - **EV charging**: Start charging when `HoursToCheapest = 0`, stop when window ends
-- **Water heating**: Heat water tank when `CurrentPrice` is below threshold
-- **Price alerts**: Send push notification when `CurrentPrice` exceeds a limit
-- **Display**: Show `CurrentPrice` on a smart display or LED indicator
+- **Water heating**: Heat water tank when `CurrentTotalPrice` is below threshold
+- **Price alerts**: Send push notification when `CurrentSpotPrice` spikes
+- **Display**: Show `CurrentTotalPrice` on a smart display or LED indicator
+- **Compare prices**: Use `CurrentSpotPrice` vs `CheapestSpotPrice` to show potential savings
+- **Grid tariff awareness**: Alert when `CurrentGridTariff` is at peak rate
 
 ---
 

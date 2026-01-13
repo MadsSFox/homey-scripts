@@ -104,32 +104,48 @@ const windows = [];
 for (let start = 0; start <= prices.length - windowSize; start++) {
   const windowPrices = prices.slice(start, start + windowSize);
   const avgTotal = windowPrices.reduce((sum, h) => sum + h.totalPrice, 0) / windowSize;
+  const avgSpot = windowPrices.reduce((sum, h) => sum + h.spotPrice, 0) / windowSize;
+  const avgGrid = windowPrices.reduce((sum, h) => sum + h.gridTariff, 0) / windowSize;
   windows.push({
     startsInHours: start,
     startHour: windowPrices[0].hour,
-    avgPrice: avgTotal
+    avgPrice: avgTotal,
+    avgSpotPrice: avgSpot,
+    avgGridTariff: avgGrid
   });
 }
 
 const cheapest = windows.reduce((min, w) => w.avgPrice < min.avgPrice ? w : min);
 
+// Calculate fixed tariffs total (for variable storage)
+const fixedTariffsTotal = systemTariff + transmissionTariff + electricityTax;
+
 // === STORE IN VARIABLES ===
 const variables = await Homey.logic.getVariables();
 
-const hoursVar = Object.values(variables).find(v => v.name === 'HoursToCheapest');
-if (hoursVar) {
-  await Homey.logic.updateVariable({ id: hoursVar.id, variable: { value: cheapest.startsInHours } });
+// Helper function to update a variable by name
+async function updateVar(name, value) {
+  const v = Object.values(variables).find(v => v.name === name);
+  if (v) {
+    await Homey.logic.updateVariable({ id: v.id, variable: { value: Math.round(value * 100) / 100 } });
+  }
 }
 
-const priceVar = Object.values(variables).find(v => v.name === 'CheapestPrice');
-if (priceVar) {
-  await Homey.logic.updateVariable({ id: priceVar.id, variable: { value: Math.round(cheapest.avgPrice * 100) / 100 } });
+// Cheapest window variables
+await updateVar('HoursToCheapest', cheapest.startsInHours);
+await updateVar('CheapestTotalPrice', cheapest.avgPrice);
+await updateVar('CheapestSpotPrice', cheapest.avgSpotPrice);
+await updateVar('CheapestGridTariff', cheapest.avgGridTariff);
+
+// Current hour variables
+if (prices.length > 0) {
+  await updateVar('CurrentTotalPrice', prices[0].totalPrice);
+  await updateVar('CurrentSpotPrice', prices[0].spotPrice);
+  await updateVar('CurrentGridTariff', prices[0].gridTariff);
 }
 
-const currentVar = Object.values(variables).find(v => v.name === 'CurrentPrice');
-if (currentVar && prices.length > 0) {
-  await Homey.logic.updateVariable({ id: currentVar.id, variable: { value: Math.round(prices[0].totalPrice * 100) / 100 } });
-}
+// Fixed tariffs (same for all hours)
+await updateVar('FixedTariffs', fixedTariffsTotal);
 
 // === BUILD MESSAGE ===
 const currentPrice = prices[0].totalPrice.toFixed(2);
