@@ -173,7 +173,7 @@ if (cheapest.startsInHours === 0) {
   message = `⏳ Vent ${cheapest.startsInHours}t — billigst kl. ${startTime} (${cheapest.avgPrice.toFixed(2)} DKK). Nu: ${currentPrice} DKK`;
 }
 
-await Homey.notifications.createNotification({ excerpt: message });
+// Note: Use a Flow to send notifications based on HoursToCheapest or the return value
 
 // Debug info
 console.log('Price type:', priceType);
