@@ -42,13 +42,27 @@ The script fetches all tariffs dynamically from Energi Data Service:
 
 #### 1. Create Homey Variables
 
-In the Homey app, go to **Logic** and create these variables:
+In the Homey app, go to **Logic** and create these variables (all are `Number` type):
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `HoursToCheapest` | Number | Hours until cheapest window starts |
-| `CheapestPrice` | Number | Average price in cheapest window (DKK/kWh) |
-| `CurrentPrice` | Number | Current hour's total price (DKK/kWh) |
+**Current hour prices:**
+| Variable | Description |
+|----------|-------------|
+| `CurrentTotalPrice` | Total price incl. VAT (DKK/kWh) |
+| `CurrentSpotPrice` | Spot price only (DKK/kWh) |
+| `CurrentGridTariff` | Grid tariff for current hour (DKK/kWh) |
+
+**Cheapest window averages:**
+| Variable | Description |
+|----------|-------------|
+| `HoursToCheapest` | Hours until cheapest window starts |
+| `CheapestTotalPrice` | Avg total price incl. VAT (DKK/kWh) |
+| `CheapestSpotPrice` | Avg spot price (DKK/kWh) |
+| `CheapestGridTariff` | Avg grid tariff (DKK/kWh) |
+
+**Fixed tariffs:**
+| Variable | Description |
+|----------|-------------|
+| `FixedTariffs` | System + transmission + electricity tax (DKK/kWh) |
 
 #### 2. Create the Script
 
@@ -67,17 +81,26 @@ Example Flow to run every hour:
 Run from a Flow with arguments:
 
 ```
-priceArea, windowSize, gridCompanyGLN
+priceArea, windowSize, gridCompanyGLN, priceType
 ```
 
 **Examples:**
-- `DK2, 3, 5790000705689` - Copenhagen area, 3-hour window, Radius Elnet
-- `DK1, 2, 5790001089030` - Western Denmark, 2-hour window, N1
+- `DK2, 3, 5790000705689, total` - Copenhagen, 3-hour window, optimize for total price
+- `DK1, 2, 5790001089030, spot` - Western Denmark, 2-hour window, optimize for spot price only
+- `DK2, 4, 5790000705689, grid` - Copenhagen, 4-hour window, optimize for grid tariff only
 
 **Default values (if no arguments provided):**
 - Price area: `DK2` (Eastern Denmark)
 - Window size: `3` hours
 - Grid company: `5790000705689` (Radius Elnet)
+- Price type: `total`
+
+**Price type options:**
+| Type | Description |
+|------|-------------|
+| `total` | Optimize for total price (spot + grid + fixed + VAT) - **recommended** |
+| `spot` | Optimize for spot price only (market price, ignores tariffs) |
+| `grid` | Optimize for grid tariff only (useful if spot prices are stable) |
 
 ### Find Your Grid Company GLN
 
@@ -122,9 +145,11 @@ Use the return value and variables to create smart automations:
 
 - **Start appliances**: When script returns `true`, turn on dishwasher/washing machine
 - **EV charging**: Start charging when `HoursToCheapest = 0`, stop when window ends
-- **Water heating**: Heat water tank when `CurrentPrice` is below threshold
-- **Price alerts**: Send push notification when `CurrentPrice` exceeds a limit
-- **Display**: Show `CurrentPrice` on a smart display or LED indicator
+- **Water heating**: Heat water tank when `CurrentTotalPrice` is below threshold
+- **Price alerts**: Send push notification when `CurrentSpotPrice` spikes
+- **Display**: Show `CurrentTotalPrice` on a smart display or LED indicator
+- **Compare prices**: Use `CurrentSpotPrice` vs `CheapestSpotPrice` to show potential savings
+- **Grid tariff awareness**: Alert when `CurrentGridTariff` is at peak rate
 
 ---
 
