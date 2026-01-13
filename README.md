@@ -32,10 +32,10 @@ The script fetches all tariffs dynamically from Energi Data Service:
 
 | Component | API Filter | Updates |
 |-----------|------------|---------|
-| Spot price | `Elspotprices` | Hourly |
+| Spot price | `DayAheadPrices` | Hourly |
 | Grid tariff (nettarif) | `DatahubPricelist` + your GLN | When changed |
-| System tariff | `ChargeTypeCode: 40000` | Quarterly |
-| Transmission tariff | `ChargeTypeCode: 41000` | Quarterly |
+| System tariff | `ChargeTypeCode: 41000` | Quarterly |
+| Transmission tariff | `ChargeTypeCode: 40000` | Quarterly |
 | Electricity tax | `ChargeTypeCode: EA-001` | Yearly |
 
 ### Setup
@@ -105,14 +105,13 @@ priceArea, windowSize, gridCompanyGLN, priceType
 ### Find Your Grid Company GLN
 
 You can find your grid company (netselskab) on your electricity bill or here:
-- https://greenpowerdenmark.dk/LeveringsstedID (enter your address)
+- https://elnet.dk/nettilslutning/find-netselskab (enter your address)
 
 **Common GLNs:**
 
 | Company | Area | GLN |
 |---------|------|-----|
 | **Radius Elnet** | København, Nordsjælland | `5790000705689` |
-| Cerius | Sydsjælland | `5790000392261` |
 | N1 | Nordjylland, Midtjylland | `5790001089030` |
 | TREFOR El-net | Trekantområdet | `5790000706686` |
 | Vores Elnet | Fyn | `5790000610976` |
