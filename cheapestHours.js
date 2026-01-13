@@ -13,26 +13,25 @@ const vatRate = 0.25;
 
 // === COMMON GRID COMPANY GLNs ===
 // Radius Elnet (København, Nordsjælland): 5790000705689
-// Cerius (Sydsjælland): 5790000392261
 // N1 (Nordjylland, Midtjylland): 5790001089030
 // TREFOR El-net (Trekantområdet): 5790000706686
 // Vores Elnet (Fyn): 5790000610976
 // Konstant (Vestjylland): 5790000704842
 // Dinel (Sønderjylland): 5790000681075
-// Find yours at: https://greenpowerdenmark.dk/LeveringsstedID
+// Find yours at: https://elnet.dk/nettilslutning/find-netselskab
 
 const now = new Date();
 const currentHour = now.getHours();
 const currentMonth = now.getMonth() + 1;
 const today = now.toISOString().split('T')[0];
 
-// === 1. FETCH SPOT PRICES ===
-const spotUrl = `https://api.energidataservice.dk/dataset/Elspotprices?filter={"PriceArea":"${priceArea}"}&start=${now.toISOString().slice(0, 13)}:00&sort=HourDK%20asc&limit=48`;
+// === 1. FETCH SPOT PRICES (DayAheadPrices replaces discontinued Elspotprices) ===
+const spotUrl = `https://api.energidataservice.dk/dataset/DayAheadPrices?filter={"PriceArea":"${priceArea}"}&start=${now.toISOString().slice(0, 13)}:00&sort=TimeDK%20asc&limit=48`;
 const spotResponse = await fetch(spotUrl);
 const spotData = await spotResponse.json();
 
-// === 2. FETCH GRID TARIFFS (ChargeType CD = nettarif C time-differentiated) ===
-const gridUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"ChargeOwner":"${gridCompanyGLN}","ChargeType":"D03"}&sort=ValidFrom%20desc&limit=5`;
+// === 2. FETCH GRID TARIFFS (Nettarif C = residential time-of-use tariff) ===
+const gridUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"GLN_Number":"${gridCompanyGLN}","Note":"Nettarif C"}&sort=ValidFrom%20desc&limit=5`;
 const gridResponse = await fetch(gridUrl);
 const gridData = await gridResponse.json();
 
@@ -43,20 +42,20 @@ const validGridTariff = gridData.records.find(r => {
   return now >= validFrom && now <= validTo;
 });
 
-// === 3. FETCH SYSTEM TARIFF (Energinet) ===
-const systemUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"ChargeOwner":"5790000432752","ChargeTypeCode":"40000"}&sort=ValidFrom%20desc&limit=1`;
+// === 3. FETCH SYSTEM TARIFF (Energinet - 41000 = Systemtarif) ===
+const systemUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"GLN_Number":"5790000432752","ChargeTypeCode":"41000"}&sort=ValidFrom%20desc&limit=1`;
 const systemResponse = await fetch(systemUrl);
 const systemData = await systemResponse.json();
 const systemTariff = systemData.records[0]?.Price1 || 0.054;
 
-// === 4. FETCH TRANSMISSION TARIFF (Energinet) ===
-const transUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"ChargeOwner":"5790000432752","ChargeTypeCode":"41000"}&sort=ValidFrom%20desc&limit=1`;
+// === 4. FETCH TRANSMISSION TARIFF (Energinet - 40000 = Transmissions nettarif) ===
+const transUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"GLN_Number":"5790000432752","ChargeTypeCode":"40000"}&sort=ValidFrom%20desc&limit=1`;
 const transResponse = await fetch(transUrl);
 const transData = await transResponse.json();
 const transmissionTariff = transData.records[0]?.Price1 || 0.049;
 
-// === 5. FETCH ELECTRICITY TAX ===
-const taxUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"ChargeOwner":"5790000432752","ChargeTypeCode":"EA-001"}&sort=ValidFrom%20desc&limit=1`;
+// === 5. FETCH ELECTRICITY TAX (Energinet - EA-001 = Elafgift) ===
+const taxUrl = `https://api.energidataservice.dk/dataset/DatahubPricelist?filter={"GLN_Number":"5790000432752","ChargeTypeCode":"EA-001"}&sort=ValidFrom%20desc&limit=1`;
 const taxResponse = await fetch(taxUrl);
 const taxData = await taxResponse.json();
 const electricityTax = taxData.records[0]?.Price1 || 0.761;
@@ -70,14 +69,14 @@ function getGridTariffForHour(hour) {
 
 // === BUILD PRICE ARRAY ===
 const prices = spotData.records
-  .filter(r => new Date(r.HourDK) >= now)
+  .filter(r => new Date(r.TimeDK) >= now)
   .slice(0, 24)
   .map((r, i) => {
-    const hourDate = new Date(r.HourDK);
+    const hourDate = new Date(r.TimeDK);
     const hour = hourDate.getHours();
 
-    // Spot price in DKK/kWh
-    let spotPrice = r.SpotPriceDKK / 1000;
+    // Spot price in DKK/kWh (DayAheadPriceDKK is in DKK/MWh, divide by 1000)
+    let spotPrice = r.DayAheadPriceDKK / 1000;
 
     // Grid tariff (time-of-use from API)
     const gridTariff = getGridTariffForHour(hour);
@@ -97,7 +96,7 @@ const prices = spotData.records
       spotPrice: spotPrice,
       gridTariff: gridTariff,
       totalPrice: totalPrice,
-      time: r.HourDK
+      time: r.TimeDK
     };
   });
 
