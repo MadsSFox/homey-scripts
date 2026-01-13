@@ -1,6 +1,17 @@
 # Homey Scripts
 
-Collection of [HomeyScript](https://homey.app/en-dk/app/com.athom.homeyscript/HomeyScript/) automation scripts for Athom Homey smart home controllers.
+Automation scripts for [Athom Homey](https://homey.app/) smart home controllers, designed to be called from Homey Flows using the [HomeyScript](https://homey.app/en-dk/app/com.athom.homeyscript/HomeyScript/) app.
+
+## What is HomeyScript?
+
+HomeyScript is an app for Athom Homey that lets you run JavaScript code directly on your Homey. Scripts can be triggered from Flows, allowing you to create advanced automations that go beyond the standard Flow cards.
+
+**To use these scripts:**
+1. Install the [HomeyScript app](https://homey.app/en-dk/app/com.athom.homeyscript/HomeyScript/) on your Homey
+2. Create a new script and paste the code
+3. Create a Flow that triggers the script (e.g., every hour, at specific times, or based on events)
+
+---
 
 ## cheapestHours.js
 
@@ -12,8 +23,8 @@ Finds the cheapest electricity window in Denmark by calculating the **true total
 - **Complete cost calculation**: Includes spot price + grid tariff + system tariff + transmission tariff + electricity tax + VAT
 - **Time-of-use tariffs**: Automatically handles hourly grid tariff variations
 - **Configurable window**: Find cheapest 1, 2, 3, or more consecutive hours
-- **Homey integration**: Updates variables for use in flows
-- **Danish notifications**: Sends actionable messages
+- **Homey integration**: Updates Logic variables for use in other Flows
+- **Danish notifications**: Sends actionable messages to your Homey
 
 ### Price Components
 
@@ -27,9 +38,33 @@ The script fetches all tariffs dynamically from Energi Data Service:
 | Transmission tariff | `ChargeTypeCode: 41000` | Quarterly |
 | Electricity tax | `ChargeTypeCode: EA-001` | Yearly |
 
+### Setup
+
+#### 1. Create Homey Variables
+
+In the Homey app, go to **Logic** and create these variables:
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `HoursToCheapest` | Number | Hours until cheapest window starts |
+| `CheapestPrice` | Number | Average price in cheapest window (DKK/kWh) |
+| `CurrentPrice` | Number | Current hour's total price (DKK/kWh) |
+
+#### 2. Create the Script
+
+1. Open the HomeyScript app
+2. Create a new script named `cheapestHours`
+3. Paste the contents of `cheapestHours.js`
+
+#### 3. Create a Flow to Run the Script
+
+Example Flow to run every hour:
+- **When**: Every hour (use the "Date & Time" app)
+- **Then**: Run HomeyScript `cheapestHours` with argument `DK2, 3, 5790000705689`
+
 ### Usage
 
-Run from HomeyScript with arguments:
+Run from a Flow with arguments:
 
 ```
 priceArea, windowSize, gridCompanyGLN
@@ -39,7 +74,7 @@ priceArea, windowSize, gridCompanyGLN
 - `DK2, 3, 5790000705689` - Copenhagen area, 3-hour window, Radius Elnet
 - `DK1, 2, 5790001089030` - Western Denmark, 2-hour window, N1
 
-**Default values:**
+**Default values (if no arguments provided):**
 - Price area: `DK2` (Eastern Denmark)
 - Window size: `3` hours
 - Grid company: `5790000705689` (Radius Elnet)
@@ -61,16 +96,6 @@ You can find your grid company (netselskab) on your electricity bill or here:
 | Konstant | Vestjylland | `5790000704842` |
 | Dinel | Sønderjylland | `5790000681075` |
 
-### Homey Variables
-
-Create these variables in Homey Logic for the script to update:
-
-| Variable | Type | Description |
-|----------|------|-------------|
-| `HoursToCheapest` | Number | Hours until cheapest window starts |
-| `CheapestPrice` | Number | Average price in cheapest window (DKK/kWh) |
-| `CurrentPrice` | Number | Current hour's total price (DKK/kWh) |
-
 ### Example Output
 
 When the cheapest window is now:
@@ -85,10 +110,15 @@ When you should wait:
 
 ### Flow Ideas
 
-- Start dishwasher/washing machine when `HoursToCheapest = 0`
-- Charge EV during cheapest window
-- Heat water tank when prices are low
-- Send notification when current price exceeds threshold
+Use the variables updated by this script to create smart automations:
+
+- **Start appliances**: When `HoursToCheapest = 0`, turn on dishwasher/washing machine
+- **EV charging**: Start charging when `HoursToCheapest = 0`, stop when window ends
+- **Water heating**: Heat water tank when `CurrentPrice` is below threshold
+- **Price alerts**: Send push notification when `CurrentPrice` exceeds a limit
+- **Display**: Show `CurrentPrice` on a smart display or LED indicator
+
+---
 
 ## License
 
