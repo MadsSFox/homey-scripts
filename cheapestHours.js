@@ -2,8 +2,14 @@
 const priceArea = args[0] || 'DK2';
 const windowSize = args[1] ? parseInt(args[1]) : 3;
 const gridCompanyGLN = args[2] || '5790000705689';  // Radius Elnet (Copenhagen)
+const priceType = args[3] || 'total';  // 'total', 'spot', or 'grid'
 const includeVAT = true;
 const vatRate = 0.25;
+
+// === PRICE TYPE OPTIONS ===
+// 'total' - Optimize for total price (spot + grid + fixed tariffs + VAT)
+// 'spot'  - Optimize for spot price only (variable market price)
+// 'grid'  - Optimize for grid tariff only (time-of-use network fee)
 
 // === COMMON GRID COMPANY GLNs ===
 // Radius Elnet (København, Nordsjælland): 5790000705689
@@ -100,6 +106,15 @@ if (prices.length < windowSize) {
 }
 
 // === FIND CHEAPEST WINDOW ===
+// Helper to get the price to compare based on priceType setting
+function getComparePrice(item) {
+  switch (priceType) {
+    case 'spot': return item.spotPrice || item.avgSpotPrice;
+    case 'grid': return item.gridTariff || item.avgGridTariff;
+    default: return item.totalPrice || item.avgPrice;
+  }
+}
+
 const windows = [];
 for (let start = 0; start <= prices.length - windowSize; start++) {
   const windowPrices = prices.slice(start, start + windowSize);
@@ -115,7 +130,8 @@ for (let start = 0; start <= prices.length - windowSize; start++) {
   });
 }
 
-const cheapest = windows.reduce((min, w) => w.avgPrice < min.avgPrice ? w : min);
+// Find cheapest window based on selected price type
+const cheapest = windows.reduce((min, w) => getComparePrice(w) < getComparePrice(min) ? w : min);
 
 // Calculate fixed tariffs total (for variable storage)
 const fixedTariffsTotal = systemTariff + transmissionTariff + electricityTax;
@@ -161,6 +177,7 @@ if (cheapest.startsInHours === 0) {
 await Homey.notifications.createNotification({ excerpt: message });
 
 // Debug info
+console.log('Price type:', priceType);
 console.log('Grid company GLN:', gridCompanyGLN);
 console.log('Grid tariff source:', validGridTariff?.ChargeOwner || 'Fallback');
 console.log('Current hour breakdown:', prices[0]);

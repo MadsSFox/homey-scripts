@@ -81,17 +81,26 @@ Example Flow to run every hour:
 Run from a Flow with arguments:
 
 ```
-priceArea, windowSize, gridCompanyGLN
+priceArea, windowSize, gridCompanyGLN, priceType
 ```
 
 **Examples:**
-- `DK2, 3, 5790000705689` - Copenhagen area, 3-hour window, Radius Elnet
-- `DK1, 2, 5790001089030` - Western Denmark, 2-hour window, N1
+- `DK2, 3, 5790000705689, total` - Copenhagen, 3-hour window, optimize for total price
+- `DK1, 2, 5790001089030, spot` - Western Denmark, 2-hour window, optimize for spot price only
+- `DK2, 4, 5790000705689, grid` - Copenhagen, 4-hour window, optimize for grid tariff only
 
 **Default values (if no arguments provided):**
 - Price area: `DK2` (Eastern Denmark)
 - Window size: `3` hours
 - Grid company: `5790000705689` (Radius Elnet)
+- Price type: `total`
+
+**Price type options:**
+| Type | Description |
+|------|-------------|
+| `total` | Optimize for total price (spot + grid + fixed + VAT) - **recommended** |
+| `spot` | Optimize for spot price only (market price, ignores tariffs) |
+| `grid` | Optimize for grid tariff only (useful if spot prices are stable) |
 
 ### Find Your Grid Company GLN
 
