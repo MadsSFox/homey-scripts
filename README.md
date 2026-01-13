@@ -74,24 +74,24 @@ In the Homey app, go to **Logic** and create these variables (all are `Number` t
 
 Example Flow to run every hour:
 - **When**: Every hour (use the "Date & Time" app)
-- **Then**: Run HomeyScript `cheapestHours` with argument `DK2, 3, 5790000705689`
+- **Then**: Run HomeyScript `cheapestHours` with argument `3, DK2, 5790000705689`
 
 ### Usage
 
 Run from a Flow with arguments:
 
 ```
-priceArea, windowSize, gridCompanyGLN, priceType
+windowSize, priceArea, gridCompanyGLN, priceType
 ```
 
 **Examples:**
-- `DK2, 3, 5790000705689, total` - Copenhagen, 3-hour window, optimize for total price
-- `DK1, 2, 5790001089030, spot` - Western Denmark, 2-hour window, optimize for spot price only
-- `DK2, 4, 5790000705689, grid` - Copenhagen, 4-hour window, optimize for grid tariff only
+- `3, DK2, 5790000705689, total` - 3-hour window, Copenhagen, optimize for total price
+- `2, DK1, 5790001089030, spot` - 2-hour window, Western Denmark, optimize for spot price only
+- `4, DK2, 5790000705689, grid` - 4-hour window, Copenhagen, optimize for grid tariff only
 
 **Default values (if no arguments provided):**
-- Price area: `DK2` (Eastern Denmark)
 - Window size: `3` hours
+- Price area: `DK2` (Eastern Denmark)
 - Grid company: `5790000705689` (Radius Elnet)
 - Price type: `total`
 

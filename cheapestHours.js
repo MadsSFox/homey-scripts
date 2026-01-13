@@ -1,5 +1,5 @@
 // === CONFIGURATION ===
-const windowSize = args[0] ? parseInt(args[1]) : 3;
+const windowSize = args[0] ? parseInt(args[0]) : 3;
 const priceArea = args[1] || 'DK2';
 const gridCompanyGLN = args[2] || '5790000705689';  // Radius Elnet (Copenhagen)
 const priceType = args[3] || 'total';  // 'total', 'spot', or 'grid'
@@ -68,12 +68,19 @@ function getGridTariffForHour(hour) {
 }
 
 // === BUILD PRICE ARRAY ===
+// Get current hour start for accurate time comparison
+const currentHourStart = new Date(now);
+currentHourStart.setMinutes(0, 0, 0);
+
 const prices = spotData.records
-  .filter(r => new Date(r.TimeDK) >= now)
+  .filter(r => new Date(r.TimeDK) >= currentHourStart)
   .slice(0, 24)
-  .map((r, i) => {
+  .map((r) => {
     const hourDate = new Date(r.TimeDK);
     const hour = hourDate.getHours();
+
+    // Calculate actual hours from now based on time difference
+    const hoursFromNow = Math.round((hourDate - currentHourStart) / (1000 * 60 * 60));
 
     // Spot price in DKK/kWh (DayAheadPriceDKK is in DKK/MWh, divide by 1000)
     let spotPrice = r.DayAheadPriceDKK / 1000;
@@ -91,7 +98,7 @@ const prices = spotData.records
     const totalPrice = includeVAT ? totalExVat * (1 + vatRate) : totalExVat;
 
     return {
-      hoursFromNow: i,
+      hoursFromNow: hoursFromNow,
       hour: hour,
       spotPrice: spotPrice,
       gridTariff: gridTariff,
@@ -121,7 +128,7 @@ for (let start = 0; start <= prices.length - windowSize; start++) {
   const avgSpot = windowPrices.reduce((sum, h) => sum + h.spotPrice, 0) / windowSize;
   const avgGrid = windowPrices.reduce((sum, h) => sum + h.gridTariff, 0) / windowSize;
   windows.push({
-    startsInHours: start,
+    startsInHours: windowPrices[0].hoursFromNow,  // Use actual hours from the price data
     startHour: windowPrices[0].hour,
     avgPrice: avgTotal,
     avgSpotPrice: avgSpot,
