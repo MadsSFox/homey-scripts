@@ -1,6 +1,6 @@
 // === CONFIGURATION ===
-const priceArea = args[0] || 'DK2';
-const windowSize = args[1] ? parseInt(args[1]) : 3;
+const windowSize = args[0] ? parseInt(args[1]) : 3;
+const priceArea = args[1] || 'DK2';
 const gridCompanyGLN = args[2] || '5790000705689';  // Radius Elnet (Copenhagen)
 const priceType = args[3] || 'total';  // 'total', 'spot', or 'grid'
 const includeVAT = true;
@@ -135,14 +135,15 @@ const cheapest = windows.reduce((min, w) => getComparePrice(w) < getComparePrice
 // Calculate fixed tariffs total (for variable storage)
 const fixedTariffsTotal = systemTariff + transmissionTariff + electricityTax;
 
-// === STORE IN VARIABLES ===
-const variables = await Homey.logic.getVariables();
-
 // Helper function to update a variable by name
 async function updateVar(name, value) {
+  // === STORE IN VARIABLES ===
+  const variables = await Homey.logic.getVariables();
   const v = Object.values(variables).find(v => v.name === name);
   if (v) {
     await Homey.logic.updateVariable({ id: v.id, variable: { value: Math.round(value * 100) / 100 } });
+  } else {
+    await Homey.logic.createVariable({ variable: { name: name, type: "number", value: Math.round(value * 100) / 100 } });
   }
 }
 
